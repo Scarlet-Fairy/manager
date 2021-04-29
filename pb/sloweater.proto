@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package="pb/";
+
+service Scheduler {
+  rpc ScheduleImageBuild (ScheduleImageBuildRequest) returns (ScheduleImageBuildResponse) {}
+  rpc ScheduleWorkload (ScheduleWorkloadRequest) returns (ScheduleWorkloadResponse) {}
+  rpc UnScheduleJob (UnScheduleJobRequest) returns (UnScheduleJobResponse) {}
+}
+
+message ScheduleImageBuildRequest {
+  string workload_id  = 1;
+  string git_repo_url = 2;
+}
+
+message ScheduleImageBuildResponse {
+  string job_name = 1;
+  string image_name = 2;
+  string error = 3;
+}
+
+message ScheduleWorkloadRequest {
+  map<string, string> envs = 1;
+  string workload_id = 2;
+
+}
+
+message ScheduleWorkloadResponse {}
+
+message UnScheduleJobRequest {
+  string job_id = 1;
+}
+
+message UnScheduleJobResponse {}

@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package="pb/";
+
+service Manager {
+  rpc Deploy(DeployRequest) returns (DeployResponse) {}
+  rpc Destroy(DestroyRequest) returns (DestroyResponse) {}
+}
+
+message Build {
+  string job_id = 1;
+  string job_name = 2;
+
+  enum Status {
+    UNKNOWN_STATUS  = 0;
+    ERROR           = 1;
+    LOADING         = 2;
+    COMPLETED       = 3;
+  }
+  Status status = 3;
+
+  message BuildStep {
+    enum Step {
+      UNKNOWN_STEP  = 0;
+      CLONE         = 1;
+      BUILD         = 2;
+      PUSH          = 3;
+    }
+
+    Step step = 1;
+    string error = 2;
+  }
+  repeated BuildStep Steps = 4;
+}
+
+message Workload {
+  string job_id = 1;
+  string job_name = 2;
+  map<string, string> envs = 3;
+}
+
+message Deploy {
+  string id = 1;
+  string name = 2;
+  string git_repo = 3;
+
+  Build build = 4;
+  Workload workload = 5;
+}
+
+message DeployRequest {
+  string git_repo = 1;
+  string name = 2;
+}
+
+message DeployResponse {
+  Deploy deploy = 1;
+}
+
+message DestroyRequest {
+  string deploy_id = 1;
+}
+
+message DestroyResponse {}
