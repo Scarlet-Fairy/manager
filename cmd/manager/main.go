@@ -1,1 +1,5 @@
-package manager
+package main
+
+func main() {
+
+}
