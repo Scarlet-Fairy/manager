@@ -27,7 +27,9 @@ message ScheduleWorkloadRequest {
 
 }
 
-message ScheduleWorkloadResponse {}
+message ScheduleWorkloadResponse {
+  string job_name = 1;
+}
 
 message UnScheduleJobRequest {
   string job_id = 1;
