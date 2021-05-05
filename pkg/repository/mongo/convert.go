@@ -16,9 +16,9 @@ func businessToData(deploy *service.Deploy) *Deploy {
 		id = parsedId
 	}
 
-	steps := make([]BuildStep, len(deploy.Build.Steps))
+	steps := make([]*BuildStep, len(deploy.Build.Steps))
 	for _, step := range deploy.Build.Steps {
-		steps = append(steps, BuildStep{
+		steps = append(steps, &BuildStep{
 			Step:  int(step.Step),
 			Error: step.Error,
 		})
@@ -30,13 +30,13 @@ func businessToData(deploy *service.Deploy) *Deploy {
 		Id:      id,
 		Name:    deploy.Name,
 		GitRepo: deploy.GitRepo,
-		Build: Build{
+		Build: &Build{
 			JobId:   deploy.Build.JobId,
 			JobName: deploy.Build.JobName,
 			Status:  int(deploy.Build.Status),
 			Steps:   steps,
 		},
-		Workload: Workload{
+		Workload: &Workload{
 			JobId:   deploy.Workload.JobId,
 			JobName: deploy.Workload.JobName,
 			Envs:    envs,
@@ -50,9 +50,9 @@ func dataToBusiness(deploy *Deploy) *service.Deploy {
 		id = deploy.Id.String()
 	}
 
-	steps := make([]service.BuildStep, len(deploy.Build.Steps))
+	steps := make([]*service.BuildStep, len(deploy.Build.Steps))
 	for _, step := range deploy.Build.Steps {
-		steps = append(steps, service.BuildStep{
+		steps = append(steps, &service.BuildStep{
 			Step:  service.Step(step.Step),
 			Error: step.Error,
 		})
@@ -79,10 +79,10 @@ func dataToBusiness(deploy *Deploy) *service.Deploy {
 	}
 }
 
-func mapEnvToArrEnv(envsToConvert map[string]string) []Env {
-	envs := make([]Env, len(envsToConvert))
+func mapEnvToArrEnv(envsToConvert map[string]string) []*Env {
+	envs := make([]*Env, len(envsToConvert))
 	for key, value := range envsToConvert {
-		envs = append(envs, Env{
+		envs = append(envs, &Env{
 			Key:   key,
 			Value: value,
 		})
@@ -91,7 +91,7 @@ func mapEnvToArrEnv(envsToConvert map[string]string) []Env {
 	return envs
 }
 
-func arrEnvToMapEnv(envsToConvert []Env) map[string]string {
+func arrEnvToMapEnv(envsToConvert []*Env) map[string]string {
 	envs := make(map[string]string)
 	for _, env := range envsToConvert {
 		envs[env.Key] = env.Value

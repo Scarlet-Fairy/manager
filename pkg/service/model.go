@@ -51,7 +51,7 @@ type Build struct {
 	JobName   string
 	ImageName string
 	Status    Status
-	Steps     []BuildStep
+	Steps     []*BuildStep
 }
 
 type Workload struct {
