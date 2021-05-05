@@ -15,14 +15,30 @@ func (s Status) IsValid() bool {
 type Step byte
 
 const (
-	StepInit  Step = 0
-	StepClone Step = 1
-	StepBuild Step = 2
-	StepPush  Step = 3
+	StepInit    Step = 0
+	StepClone   Step = 1
+	StepBuild   Step = 2
+	StepPush    Step = 3
+	StepUnknown Step = 4
 )
 
 func (s Step) IsValid() bool {
 	return s == StepInit || s == StepClone || s == StepBuild || s == StepPush
+}
+
+func (s Step) ToString() string {
+	switch s {
+	case StepInit:
+		return "init"
+	case StepClone:
+		return "clone"
+	case StepBuild:
+		return "build"
+	case StepPush:
+		return "push"
+	default:
+		return "unknown"
+	}
 }
 
 type BuildStep struct {
@@ -31,10 +47,11 @@ type BuildStep struct {
 }
 
 type Build struct {
-	JobId   string
-	JobName string
-	Status  Status
-	Steps   []BuildStep
+	JobId     string
+	JobName   string
+	ImageName string
+	Status    Status
+	Steps     []BuildStep
 }
 
 type Workload struct {
@@ -44,9 +61,9 @@ type Workload struct {
 }
 
 type Deploy struct {
-	Id         string
-	Name       string
-	GithubRepo string
-	Build      Build
-	Workload   Workload
+	Id       string
+	Name     string
+	GitRepo  string
+	Build    *Build
+	Workload *Workload
 }
