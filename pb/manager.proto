@@ -12,6 +12,7 @@ service Manager {
 message Build {
   string job_id = 1;
   string job_name = 2;
+  string image_name = 3;
 
   enum Status {
     UNKNOWN_STATUS  = 0;
@@ -19,7 +20,7 @@ message Build {
     LOADING         = 2;
     COMPLETED       = 3;
   }
-  Status status = 3;
+  Status status = 4;
 
   message BuildStep {
     enum Step {
@@ -32,7 +33,7 @@ message Build {
     Step step = 1;
     string error = 2;
   }
-  repeated BuildStep Steps = 4;
+  repeated BuildStep Steps = 5;
 }
 
 message Workload {
