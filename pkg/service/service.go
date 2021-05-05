@@ -41,7 +41,7 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 		return nil, err
 	}
 
-	events, err := s.message.ConsumeBuildEvents(id)
+	events, clear, err := s.message.ConsumeBuildEvents(id)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +84,9 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 
 			break
 		}
+	}
+	if err := clear(); err != nil {
+		return nil, err
 	}
 
 	jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, id)

@@ -64,9 +64,9 @@ func (m *rabbitMessage) declareQueues(id string) error {
 	return nil
 }
 
-func (m *rabbitMessage) ConsumeBuildEvents(id string) (<-chan *service.BuildStep, error) {
+func (m *rabbitMessage) ConsumeBuildEvents(id string) (<-chan *service.BuildStep, func() error, error) {
 	if err := m.declareQueues(id); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	events, err := m.channel.Consume(
@@ -79,7 +79,7 @@ func (m *rabbitMessage) ConsumeBuildEvents(id string) (<-chan *service.BuildStep
 		nil,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	buildStepEvents := make(chan *service.BuildStep)
@@ -120,5 +120,17 @@ func (m *rabbitMessage) ConsumeBuildEvents(id string) (<-chan *service.BuildStep
 		}
 	}()
 
-	return buildStepEvents, nil
+	return buildStepEvents, func() error {
+		_, err := m.channel.QueueDelete(
+			id,
+			false,
+			false,
+			false,
+		)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}, nil
 }
