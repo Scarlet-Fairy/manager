@@ -11,14 +11,18 @@ type Service interface {
 	Destroy(ctx context.Context, deployId string) error
 }
 
-func NewService() Service {
-	return &basicService{}
-}
-
 type basicService struct {
 	repository Repository
 	message    Message
 	scheduler  Scheduler
+}
+
+func NewService(repository Repository, message Message, scheduler Scheduler) Service {
+	return &basicService{
+		repository: repository,
+		message:    message,
+		scheduler:  scheduler,
+	}
 }
 
 func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name string, envs map[string]string) (*Deploy, error) {

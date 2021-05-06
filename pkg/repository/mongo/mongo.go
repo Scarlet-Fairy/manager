@@ -13,9 +13,9 @@ type mongoRepository struct {
 	collection *mongo.Collection
 }
 
-func New(colleciton *mongo.Collection) service.Repository {
+func New(collection *mongo.Collection) service.Repository {
 	return &mongoRepository{
-		collection: colleciton,
+		collection: collection,
 	}
 }
 
