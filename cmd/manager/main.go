@@ -111,7 +111,7 @@ func main() {
 	}()
 	deployCollection := mongoDbClient.Database(*mongoDatabase).Collection("deploy")
 
-	amqpMessageInstance := amqpMessage.New(rabbitMqChannel)
+	amqpMessageInstance := amqpMessage.New(rabbitMqChannel, messageComponentLogger)
 	if err := amqpMessageInstance.Init(); err != nil {
 		level.Error(messageComponentLogger).Log(
 			"during", "init",
@@ -121,9 +121,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	mongoRepositoryInstance := mongoRepository.New(deployCollection)
+	mongoRepositoryInstance := mongoRepository.New(deployCollection, repositoryComponentLogger)
 
-	grpcSchedulerInstance := grpcScheduler.New(schedulerClient)
+	grpcSchedulerInstance := grpcScheduler.New(schedulerClient, schedulerComponentLogger)
 
 	svc := service.NewService(mongoRepositoryInstance, amqpMessageInstance, grpcSchedulerInstance)
 	endpoints := endpoint.NewEndpoint(svc, endpointLayerLogger)

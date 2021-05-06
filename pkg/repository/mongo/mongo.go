@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	middlewares "github.com/Scarlet-Fairy/manager/pkg/repository"
 	"github.com/Scarlet-Fairy/manager/pkg/service"
+	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,10 +15,14 @@ type mongoRepository struct {
 	collection *mongo.Collection
 }
 
-func New(collection *mongo.Collection) service.Repository {
-	return &mongoRepository{
+func New(collection *mongo.Collection, logger log.Logger) service.Repository {
+	var instance service.Repository
+	instance = &mongoRepository{
 		collection: collection,
 	}
+	instance = middlewares.LoggingMiddleware(logger)(instance)
+
+	return instance
 }
 
 func (m *mongoRepository) CreateDeploy(ctx context.Context, deploy *service.Deploy) (string, error) {
@@ -126,7 +132,7 @@ func (m *mongoRepository) InitBuild(ctx context.Context, id string, jobName stri
 		},
 		bson.M{
 			"$set": Deploy{
-				Build: Build{
+				Build: &Build{
 					JobId:     jobId,
 					JobName:   jobName,
 					ImageName: imageName,
@@ -157,7 +163,7 @@ func (m *mongoRepository) InitWorkload(ctx context.Context, id string, jobName s
 		},
 		bson.M{
 			"$set": Deploy{
-				Workload: Workload{
+				Workload: &Workload{
 					JobId:   jobId,
 					JobName: jobName,
 					Envs:    dataEnv,
@@ -186,7 +192,7 @@ func (m *mongoRepository) SetBuildStatus(ctx context.Context, id string, status 
 		},
 		bson.M{
 			"$set": Deploy{
-				Build: Build{
+				Build: &Build{
 					Status: int(status),
 				},
 			},

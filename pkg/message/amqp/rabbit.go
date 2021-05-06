@@ -3,7 +3,9 @@ package amqp
 import (
 	"encoding/json"
 	"fmt"
+	middlewares "github.com/Scarlet-Fairy/manager/pkg/message"
 	"github.com/Scarlet-Fairy/manager/pkg/service"
+	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
@@ -16,10 +18,14 @@ type rabbitMessage struct {
 	channel *amqp.Channel
 }
 
-func New(ch *amqp.Channel) service.Message {
-	return &rabbitMessage{
+func New(ch *amqp.Channel, logger log.Logger) service.Message {
+	var instance service.Message
+	instance = &rabbitMessage{
 		channel: ch,
 	}
+	instance = middlewares.LoggingMiddleware(logger)(instance)
+
+	return instance
 }
 
 func (m *rabbitMessage) Init() error {

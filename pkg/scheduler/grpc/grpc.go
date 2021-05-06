@@ -3,7 +3,9 @@ package grpc
 import (
 	"context"
 	"github.com/Scarlet-Fairy/manager/pb"
+	middleware "github.com/Scarlet-Fairy/manager/pkg/scheduler"
 	"github.com/Scarlet-Fairy/manager/pkg/service"
+	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,10 +15,12 @@ type grpcScheduler struct {
 	client pb.SchedulerClient
 }
 
-func New(client pb.SchedulerClient) service.Scheduler {
-	return &grpcScheduler{
+func New(client pb.SchedulerClient, logger log.Logger) service.Scheduler {
+	var instance service.Scheduler
+	instance = &grpcScheduler{
 		client: client,
 	}
+	instance = middleware.LoggingMiddleware(logger)(instance)
 }
 
 func (g grpcScheduler) ScheduleImageBuild(ctx context.Context, workloadId string, gitRepoUrl string) (string, string, error) {
