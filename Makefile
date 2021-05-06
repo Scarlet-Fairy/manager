@@ -102,6 +102,11 @@ watch:
 	$(eval PACKAGE_NAME=$(shell head -n 1 go.mod | cut -d ' ' -f2))
 	docker run -it --rm -w /go/src/$(PACKAGE_NAME) -v $(shell pwd):/go/src/$(PACKAGE_NAME) -p $(SERVICE_PORT):$(SERVICE_PORT) cosmtrek/air
 
+compose-up:
+	@docker-compose -f deployments/docker-compose.yml up -d
+
+compose-down:
+	@docker-compose -f deployments/docker-compose.yml down
 help:
 	@echo ''
 	@echo 'Usage:'
