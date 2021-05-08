@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -27,33 +26,36 @@ func NewService(repository Repository, message Message, scheduler Scheduler) Ser
 
 func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name string, envs map[string]string) (*Deploy, error) {
 	id, err := s.repository.CreateDeploy(ctx, &Deploy{
-		Name:     name,
-		GitRepo:  gitRepoUrl,
-		Build:    &Build{},
-		Workload: &Workload{},
+		Name:    name,
+		GitRepo: gitRepoUrl,
+		Build:   &Build{},
+		Workload: &Workload{
+			Envs: envs,
+		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Deploy creation")
 	}
 
 	buildJobName, imageName, err := s.scheduler.ScheduleImageBuild(ctx, id, gitRepoUrl)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Image Build Schedulation")
 	}
 
 	if err := s.repository.InitBuild(ctx, id, buildJobName, buildJobName, imageName); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Storing build infos")
 	}
 
 	events, clear, err := s.message.ConsumeBuildEvents(id)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Queue consuming")
 	}
 
 	for event := range events {
+
 		if !event.Step.IsValid() {
 			if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Settings Build status on Error")
 			}
 
 			return nil, errors.Wrap(
@@ -64,26 +66,31 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 
 		if event.Error != "" {
 			if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Recording Build Step with error")
 			}
 
 			if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Settings Build Status on Error")
 			}
 
-			return nil, errors.Wrap(
-				errors.New(fmt.Sprintf("[%s] %s", event.Step.ToString(), event.Error)),
-				"Build failed",
-			)
+			break
 		}
-
 		if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Recoding Build Step")
 		}
 
 		if event.Step == StepPush {
 			if err := s.repository.SetBuildStatus(ctx, id, StatusCompleted); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Settings Build Status on Completed")
+			}
+
+			jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, id)
+			if err != nil {
+				return nil, errors.Wrap(err, "Scheduling Workload")
+			}
+
+			if err := s.repository.InitWorkload(ctx, id, jobName, jobName, envs); err != nil {
+				return nil, errors.Wrap(err, "Storing workload infos")
 			}
 
 			break
@@ -93,18 +100,9 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 		return nil, err
 	}
 
-	jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.repository.InitWorkload(ctx, id, jobName, jobName, envs); err != nil {
-		return nil, err
-	}
-
 	deploy, err := s.repository.GetDeploy(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Retrieving final Deploy infos")
 	}
 
 	return deploy, nil

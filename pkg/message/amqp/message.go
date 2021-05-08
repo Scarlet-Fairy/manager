@@ -10,7 +10,7 @@ type message struct {
 func (m message) ParseTopic() service.Step {
 	switch m.Topic {
 	case "clone":
-		return service.StepPush
+		return service.StepClone
 	case "build":
 		return service.StepBuild
 	case "push":

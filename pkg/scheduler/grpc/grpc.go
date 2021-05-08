@@ -21,6 +21,8 @@ func New(client pb.SchedulerClient, logger log.Logger) service.Scheduler {
 		client: client,
 	}
 	instance = middleware.LoggingMiddleware(logger)(instance)
+
+	return instance
 }
 
 func (g grpcScheduler) ScheduleImageBuild(ctx context.Context, workloadId string, gitRepoUrl string) (string, string, error) {

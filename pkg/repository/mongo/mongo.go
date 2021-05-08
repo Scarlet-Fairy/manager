@@ -31,16 +31,19 @@ func (m *mongoRepository) CreateDeploy(ctx context.Context, deploy *service.Depl
 		return "", err
 	}
 
-	return res.InsertedID.(primitive.ObjectID).String(), nil
+	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
 func (m *mongoRepository) GetDeploy(ctx context.Context, id string) (*service.Deploy, error) {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
 	res := m.collection.FindOne(
 		ctx,
 		bson.M{
-			"_id": bson.M{
-				"$eq": id,
-			},
+			"_id": objectId,
 		},
 	)
 	if err := res.Err(); err != nil {
@@ -58,7 +61,7 @@ func (m *mongoRepository) GetDeploy(ctx context.Context, id string) (*service.De
 func (m *mongoRepository) ListDeploy(ctx context.Context) ([]*service.Deploy, error) {
 	var deploys []*service.Deploy
 
-	cur, err := m.collection.Find(ctx, bson.D{})
+	cur, err := m.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -77,14 +80,18 @@ func (m *mongoRepository) ListDeploy(ctx context.Context) ([]*service.Deploy, er
 }
 
 func (m *mongoRepository) UpdateDeploy(ctx context.Context, deploy *service.Deploy) error {
+	objectId, err := primitive.ObjectIDFromHex(deploy.Id)
+	if err != nil {
+		return err
+	}
+
 	dataDeploy := businessToData(deploy)
 
 	res, err := m.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id": bson.M{
-				"$eq": dataDeploy.Id,
-			}},
+			"_id": objectId,
+		},
 		bson.M{
 			"$set": dataDeploy,
 		},
@@ -101,15 +108,13 @@ func (m *mongoRepository) UpdateDeploy(ctx context.Context, deploy *service.Depl
 }
 
 func (m *mongoRepository) DeleteDeploy(ctx context.Context, id string) error {
-	dataId, err := primitive.ObjectIDFromHex(id)
+	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
 	res, err := m.collection.DeleteOne(ctx, bson.M{
-		"_id": bson.M{
-			"$eq": dataId,
-		},
+		"_id": objectId,
 	})
 	if err != nil {
 		return err
@@ -123,20 +128,22 @@ func (m *mongoRepository) DeleteDeploy(ctx context.Context, id string) error {
 }
 
 func (m *mongoRepository) InitBuild(ctx context.Context, id string, jobName string, jobId string, imageName string) error {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
 	res, err := m.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id": bson.M{
-				"$eq": id,
-			},
+			"_id": objectId,
 		},
 		bson.M{
-			"$set": Deploy{
-				Build: &Build{
-					JobId:     jobId,
-					JobName:   jobName,
-					ImageName: imageName,
-				},
+			"$set": bson.M{
+				"build.job_id":     jobId,
+				"build.job_name":   jobName,
+				"build.image_name": imageName,
+				"build.steps":      []bson.M{},
 			},
 		},
 	)
@@ -152,22 +159,23 @@ func (m *mongoRepository) InitBuild(ctx context.Context, id string, jobName stri
 }
 
 func (m *mongoRepository) InitWorkload(ctx context.Context, id string, jobName string, jobId string, envs map[string]string) error {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
 	dataEnv := mapEnvToArrEnv(envs)
 
 	res, err := m.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id": bson.M{
-				"$eq": id,
-			},
+			"_id": objectId,
 		},
 		bson.M{
-			"$set": Deploy{
-				Workload: &Workload{
-					JobId:   jobId,
-					JobName: jobName,
-					Envs:    dataEnv,
-				},
+			"$set": bson.M{
+				"workload.job_id":   jobId,
+				"workload.job_name": jobName,
+				"workload.envs":     dataEnv,
 			},
 		},
 	)
@@ -183,18 +191,19 @@ func (m *mongoRepository) InitWorkload(ctx context.Context, id string, jobName s
 }
 
 func (m *mongoRepository) SetBuildStatus(ctx context.Context, id string, status service.Status) error {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
 	res, err := m.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id": bson.M{
-				"$eq": id,
-			},
+			"_id": objectId,
 		},
 		bson.M{
-			"$set": Deploy{
-				Build: &Build{
-					Status: int(status),
-				},
+			"$set": bson.M{
+				"build.status": int(status),
 			},
 		},
 	)
@@ -210,20 +219,21 @@ func (m *mongoRepository) SetBuildStatus(ctx context.Context, id string, status 
 }
 
 func (m *mongoRepository) RecordBuildStep(ctx context.Context, id string, buildStep service.BuildStep) error {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
 	res, err := m.collection.UpdateOne(
 		ctx,
 		bson.M{
-			"_id": bson.M{
-				"$eq": id,
-			},
+			"_id": objectId,
 		},
 		bson.M{
 			"$push": bson.M{
-				"build": bson.M{
-					"steps": BuildStep{
-						Step:  int(buildStep.Step),
-						Error: buildStep.Error,
-					},
+				"build.steps": bson.M{
+					"step":  int(buildStep.Step),
+					"error": buildStep.Error,
 				},
 			},
 		},

@@ -28,7 +28,7 @@ import (
 var (
 	grpcAddr      = flag.String("grpc-url", ":8081", "gRPC server listen address")
 	schedulerUrl  = flag.String("scheduler-url", "localhost:8082", "url of the scheduler gRPC server")
-	amqpUrl       = flag.String("amqp-url", "amqp://demo:demo@localhost:5672", "url of rabbitmq")
+	amqpUrl       = flag.String("amqp-url", "amqp://guest:guest@localhost:5672/", "url of rabbitmq")
 	mongoUrl      = flag.String("mongo-url", "mongodb://localhost:27017", "url of mongodb")
 	mongoDatabase = flag.String("mongo-db", "manager", "mongodb manager where store state data")
 )
@@ -134,7 +134,7 @@ func main() {
 		grpcListener, err := net.Listen("tcp", *grpcAddr)
 		if err != nil {
 			level.Error(transportLayerLogger).Log(
-				"during", "init-listen",
+				"during", "init",
 				"msg", fmt.Sprintf("failed to listen on %s", *grpcAddr),
 				"err", err,
 			)

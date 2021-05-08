@@ -34,7 +34,7 @@ func transportDeployToCoreDeploy(deploy *pb.Deploy) *service.Deploy {
 }
 
 func coreDeployToTransportDeploy(deploy *service.Deploy) *pb.Deploy {
-	buildSteps := make([]*pb.Build_BuildStep, len(deploy.Build.Steps))
+	var buildSteps []*pb.Build_BuildStep
 	for _, step := range deploy.Build.Steps {
 		buildSteps = append(buildSteps, &pb.Build_BuildStep{
 			Step:  pb.Build_BuildStep_Step(step.Step),

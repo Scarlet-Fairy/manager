@@ -14,16 +14,17 @@ func businessToData(deploy *service.Deploy) *Deploy {
 		}
 
 		id = parsedId
+	} else {
+		id = primitive.NewObjectID()
 	}
 
-	steps := make([]*BuildStep, len(deploy.Build.Steps))
+	var steps []*BuildStep
 	for _, step := range deploy.Build.Steps {
 		steps = append(steps, &BuildStep{
 			Step:  int(step.Step),
 			Error: step.Error,
 		})
 	}
-
 	envs := mapEnvToArrEnv(deploy.Workload.Envs)
 
 	return &Deploy{
@@ -47,10 +48,10 @@ func businessToData(deploy *service.Deploy) *Deploy {
 func dataToBusiness(deploy *Deploy) *service.Deploy {
 	id := ""
 	if deploy.Id != primitive.NilObjectID {
-		id = deploy.Id.String()
+		id = deploy.Id.Hex()
 	}
 
-	steps := make([]*service.BuildStep, len(deploy.Build.Steps))
+	var steps []*service.BuildStep
 	for _, step := range deploy.Build.Steps {
 		steps = append(steps, &service.BuildStep{
 			Step:  service.Step(step.Step),
@@ -80,12 +81,14 @@ func dataToBusiness(deploy *Deploy) *service.Deploy {
 }
 
 func mapEnvToArrEnv(envsToConvert map[string]string) []*Env {
-	envs := make([]*Env, len(envsToConvert))
-	for key, value := range envsToConvert {
-		envs = append(envs, &Env{
-			Key:   key,
-			Value: value,
-		})
+	var envs []*Env
+	if envsToConvert != nil {
+		for key, value := range envsToConvert {
+			envs = append(envs, &Env{
+				Key:   key,
+				Value: value,
+			})
+		}
 	}
 
 	return envs
@@ -93,6 +96,7 @@ func mapEnvToArrEnv(envsToConvert map[string]string) []*Env {
 
 func arrEnvToMapEnv(envsToConvert []*Env) map[string]string {
 	envs := make(map[string]string)
+
 	for _, env := range envsToConvert {
 		envs[env.Key] = env.Value
 	}

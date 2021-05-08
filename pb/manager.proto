@@ -33,7 +33,7 @@ message Build {
     Step step = 1;
     string error = 2;
   }
-  repeated BuildStep Steps = 5;
+  repeated BuildStep steps = 5;
 }
 
 message Workload {
