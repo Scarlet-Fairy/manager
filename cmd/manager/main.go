@@ -40,7 +40,6 @@ var (
 	errorLogger               = loggers.ErrorLogger
 	transportLayerLogger      = loggers.TransportLayerLogger
 	endpointLayerLogger       = loggers.EndpointLayerLogger
-	coreLayerLogger           = loggers.CoreLayerLogger
 	serviceComponentLogger    = loggers.ServiceComponentLogger
 	messageComponentLogger    = loggers.MessageComponentLogger
 	repositoryComponentLogger = loggers.RepositoryComponentLogger

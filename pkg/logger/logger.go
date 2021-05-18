@@ -13,7 +13,6 @@ type Loggers struct {
 
 	TransportLayerLogger log.Logger
 	EndpointLayerLogger  log.Logger
-	CoreLayerLogger      log.Logger
 
 	ServiceComponentLogger    log.Logger
 	MessageComponentLogger    log.Logger
@@ -34,7 +33,6 @@ func NewLogger() Loggers {
 
 		TransportLayerLogger: log.With(logger, "layer", "transport"),
 		EndpointLayerLogger:  log.With(logger, "layer", "endpoint"),
-		CoreLayerLogger:      log.With(logger, "layer", "core"),
 
 		ServiceComponentLogger:    log.With(logger, "component", "service"),
 		MessageComponentLogger:    log.With(logger, "component", "message"),
