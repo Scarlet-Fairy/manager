@@ -1,0 +1,7 @@
+/deployments/
+/.git/
+/vendor/
+
+.gitignore
+Makefile
+README.md
