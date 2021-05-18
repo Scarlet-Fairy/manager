@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
 )
 
@@ -16,12 +17,18 @@ type basicService struct {
 	scheduler  Scheduler
 }
 
-func NewService(repository Repository, message Message, scheduler Scheduler) Service {
-	return &basicService{
-		repository: repository,
-		message:    message,
-		scheduler:  scheduler,
+func NewService(repository Repository, message Message, scheduler Scheduler, logger log.Logger) Service {
+	var service Service
+	{
+		service = &basicService{
+			repository: repository,
+			message:    message,
+			scheduler:  scheduler,
+		}
+		service = LoggingMiddleware(logger)(service)
 	}
+
+	return service
 }
 
 func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name string, envs map[string]string) (*Deploy, error) {
@@ -109,12 +116,17 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 }
 
 func (s *basicService) Destroy(ctx context.Context, deployId string) error {
-	if err := s.repository.DeleteDeploy(ctx, deployId); err != nil {
-		return err
+	deploy, err := s.repository.GetDeploy(ctx, deployId)
+	if err != nil {
+		return errors.Wrap(err, "Retrieving Deploy")
 	}
 
-	if err := s.scheduler.UnScheduleJob(ctx, JobId(deployId).NameWorkload()); err != nil {
-		return err
+	if err := s.repository.DeleteDeploy(ctx, deployId); err != nil {
+		return errors.Wrap(err, "Deleting Deploy")
+	}
+
+	if err := s.scheduler.UnScheduleJob(ctx, deploy.Workload.JobId); err != nil {
+		return errors.Wrap(err, "UnScheduling Workload")
 	}
 
 	return nil
