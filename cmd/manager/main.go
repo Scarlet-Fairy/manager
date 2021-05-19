@@ -124,7 +124,7 @@ func main() {
 
 	grpcSchedulerInstance := grpcScheduler.New(schedulerClient, schedulerComponentLogger)
 
-	svc := service.NewService(mongoRepositoryInstance, amqpMessageInstance, grpcSchedulerInstance)
+	svc := service.NewService(mongoRepositoryInstance, amqpMessageInstance, grpcSchedulerInstance, serviceComponentLogger)
 	endpoints := endpoint.NewEndpoint(svc, endpointLayerLogger)
 	grpcServer := grpcTransport.NewGRPCServer(endpoints, transportLayerLogger)
 
