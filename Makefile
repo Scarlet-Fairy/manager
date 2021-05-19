@@ -14,7 +14,7 @@ YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: all test build run vendor
+.PHONY: all test build run
 
 all: help
 
@@ -61,16 +61,13 @@ ifeq ($(EXPORT_RESULT), true)
 	gocov convert profile.cov | gocov-xml > coverage.xml
 endif
 
-vendor:
-	@echo 'Creating vendor folder'
-	@$(GOCMD) mod vendor
 
-build: vendor
+build:
 	@echo 'Building ${BINARY_NAME}'
 	@mkdir -p bin
-	@$(GOCMD) build -mod vendor -o $(BIN_FOLDER)$(BINARY_NAME) $(MAIN_PATH)
+	@$(GOCMD) build -o $(BIN_FOLDER)$(BINARY_NAME) $(MAIN_PATH)
 
-docker-build: vendor
+docker-build:
 	docker build --rm --tag $(BINARY_NAME) .
 
 proto-build:
@@ -123,7 +120,6 @@ help:
 	@echo "  ${YELLOW}lint-dockerfile ${RESET} ${GREEN}Lint your Dockerfile${RESET}"
 	@echo "  ${YELLOW}lint-go         ${RESET} ${GREEN}Use golintci-lint on your project${RESET}"
 	@echo "  ${YELLOW}test            ${RESET} ${GREEN}Run the tests of the project${RESET}"
-	@echo "  ${YELLOW}vendor          ${RESET} ${GREEN}Copy of all packages needed to support builds and tests in the vendor directory${RESET}"
 	@echo "  ${YELLOW}watch           ${RESET} ${GREEN}Run the code with cosmtrek/air to have automatic reload on changes${RESET}"
 	@echo "  ${YELLOW}run-jaeger      ${RESET} ${GREEN}Run Jaeger to store traces${RESET}"
 	@echo "  ${YELLOW}run-registry	  ${RESET} ${GREEN}Run a docker container registry on port 5000${RESET}"
