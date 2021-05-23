@@ -5,6 +5,7 @@ import "context"
 type Repository interface {
 	CreateDeploy(ctx context.Context, deploy *Deploy) (string, error)
 	GetDeploy(ctx context.Context, id string) (*Deploy, error)
+	GetDeployByName(ctx context.Context, name string) (*Deploy, error)
 	ListDeploy(ctx context.Context) ([]*Deploy, error)
 	UpdateDeploy(ctx context.Context, deploy *Deploy) error
 	DeleteDeploy(ctx context.Context, id string) error

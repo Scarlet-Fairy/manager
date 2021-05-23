@@ -1,12 +1,11 @@
 syntax = "proto3";
-
 package protobuf;
-
-option go_package="pb/";
+option go_package = "pb/";
 
 service Manager {
   rpc Deploy(DeployRequest) returns (DeployResponse) {}
   rpc Destroy(DestroyRequest) returns (DestroyResponse) {}
+  rpc GetDeploy(GetDeployRequest) returns (GetDeployResponse) {}
 }
 
 message Build {
@@ -58,7 +57,7 @@ message DeployRequest {
 }
 
 message DeployResponse {
-  Deploy deploy = 1;
+  string deploy_id = 1;
 }
 
 message DestroyRequest {
@@ -66,3 +65,11 @@ message DestroyRequest {
 }
 
 message DestroyResponse {}
+
+message GetDeployRequest {
+  string name = 1;
+}
+
+message GetDeployResponse {
+  Deploy deploy = 1;
+}

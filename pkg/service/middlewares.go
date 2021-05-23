@@ -21,14 +21,14 @@ type loggingMiddlware struct {
 	logger log.Logger
 }
 
-func (l *loggingMiddlware) Deploy(ctx context.Context, gitRepo string, name string, envs map[string]string) (deploy *Deploy, err error) {
+func (l *loggingMiddlware) Deploy(ctx context.Context, gitRepo string, name string, envs map[string]string) (deployId string, err error) {
 	defer func() {
 		l.logger.Log(
 			"method", "Deploy",
 			"gitRepo", gitRepo,
 			"name", name,
 			"envs", envs,
-			"deploy", deploy,
+			"deployId", deployId,
 			"err", err,
 		)
 	}()
@@ -46,4 +46,16 @@ func (l *loggingMiddlware) Destroy(ctx context.Context, deployId string) (err er
 	}()
 
 	return l.next.Destroy(ctx, deployId)
+}
+
+func (l *loggingMiddlware) GetDeploy(ctx context.Context, name string) (deploy *Deploy, err error) {
+	defer func() {
+		l.logger.Log(
+			"method", "GetDeploy",
+			"name", name,
+			"err", err,
+		)
+	}()
+
+	return l.next.GetDeploy(ctx, name)
 }

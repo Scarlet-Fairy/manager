@@ -20,7 +20,7 @@ func encodeDeployResponse(_ context.Context, resp interface{}) (interface{}, err
 	res := resp.(*endpoint.DeployResponse)
 
 	return &pb.DeployResponse{
-		Deploy: coreDeployToTransportDeploy(res.Deploy),
+		DeployId: res.DeployId,
 	}, nil
 }
 
@@ -34,4 +34,20 @@ func decodeDestroyRequest(_ context.Context, grpcReq interface{}) (interface{}, 
 
 func encodeDestroyResponse(_ context.Context, resp interface{}) (interface{}, error) {
 	return &pb.DestroyResponse{}, nil
+}
+
+func decodeGetDeployRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.GetDeployRequest)
+
+	return &endpoint.GetDeployRequest{
+		Name: req.Name,
+	}, nil
+}
+
+func encodeGetDeployResponse(_ context.Context, resp interface{}) (interface{}, error) {
+	res := resp.(*endpoint.GetDeployResponse)
+
+	return &pb.GetDeployResponse{
+		Deploy: coreDeployToTransportDeploy(res.Deploy),
+	}, nil
 }

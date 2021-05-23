@@ -7,8 +7,9 @@ import (
 )
 
 type Service interface {
-	Deploy(ctx context.Context, gitRepo string, name string, envs map[string]string) (*Deploy, error)
+	Deploy(ctx context.Context, gitRepo string, name string, envs map[string]string) (string, error)
 	Destroy(ctx context.Context, deployId string) error
+	GetDeploy(ctx context.Context, name string) (*Deploy, error)
 }
 
 type basicService struct {
@@ -31,7 +32,7 @@ func NewService(repository Repository, message Message, scheduler Scheduler, log
 	return service
 }
 
-func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name string, envs map[string]string) (*Deploy, error) {
+func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name string, envs map[string]string) (string, error) {
 	id, err := s.repository.CreateDeploy(ctx, &Deploy{
 		Name:    name,
 		GitRepo: gitRepoUrl,
@@ -41,78 +42,70 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "Deploy creation")
+		return "", errors.Wrap(err, "Deploy creation")
 	}
 
 	buildJobName, imageName, err := s.scheduler.ScheduleImageBuild(ctx, id, gitRepoUrl)
 	if err != nil {
-		return nil, errors.Wrap(err, "Image Build Schedulation")
+		return "", errors.Wrap(err, "Image Build Schedulation")
 	}
 
 	if err := s.repository.InitBuild(ctx, id, buildJobName, buildJobName, imageName); err != nil {
-		return nil, errors.Wrap(err, "Storing build infos")
+		return "", errors.Wrap(err, "Storing build infos")
 	}
 
-	events, clear, err := s.message.ConsumeBuildEvents(id)
-	if err != nil {
-		return nil, errors.Wrap(err, "Queue consuming")
-	}
-
-	for event := range events {
-
-		if !event.Step.IsValid() {
-			if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
-				return nil, errors.Wrap(err, "Settings Build status on Error")
-			}
-
-			return nil, errors.Wrap(
-				errors.New("Internal error while parsing"),
-				"Build failed",
-			)
+	go func() {
+		events, clear, err := s.message.ConsumeBuildEvents(id)
+		if err != nil {
+			return
 		}
 
-		if event.Error != "" {
+		for event := range events {
+
+			if !event.Step.IsValid() {
+				_ = s.repository.SetBuildStatus(ctx, id, StatusError)
+
+				return
+			}
+
+			if event.Error != "" {
+				if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
+					return
+				}
+
+				if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
+					return
+				}
+
+				break
+			}
 			if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
-				return nil, errors.Wrap(err, "Recording Build Step with error")
+				return
 			}
 
-			if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
-				return nil, errors.Wrap(err, "Settings Build Status on Error")
-			}
+			if event.Step == StepPush {
+				if err := s.repository.SetBuildStatus(ctx, id, StatusCompleted); err != nil {
+					return
+				}
 
-			break
+				jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, id)
+				if err != nil {
+					_ = s.repository.SetBuildStatus(ctx, id, StatusError)
+
+					return
+				}
+
+				if err := s.repository.InitWorkload(ctx, id, jobName, jobName, envs); err != nil {
+					return
+				}
+
+				break
+			}
 		}
-		if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
-			return nil, errors.Wrap(err, "Recoding Build Step")
-		}
+		_ = clear()
+	}()
 
-		if event.Step == StepPush {
-			if err := s.repository.SetBuildStatus(ctx, id, StatusCompleted); err != nil {
-				return nil, errors.Wrap(err, "Settings Build Status on Completed")
-			}
-
-			jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, id)
-			if err != nil {
-				return nil, errors.Wrap(err, "Scheduling Workload")
-			}
-
-			if err := s.repository.InitWorkload(ctx, id, jobName, jobName, envs); err != nil {
-				return nil, errors.Wrap(err, "Storing workload infos")
-			}
-
-			break
-		}
-	}
-	if err := clear(); err != nil {
-		return nil, err
-	}
-
-	deploy, err := s.repository.GetDeploy(ctx, id)
-	if err != nil {
-		return nil, errors.Wrap(err, "Retrieving final Deploy infos")
-	}
-
-	return deploy, nil
+	return id, nil
 }
 
 func (s *basicService) Destroy(ctx context.Context, deployId string) error {
@@ -130,4 +123,13 @@ func (s *basicService) Destroy(ctx context.Context, deployId string) error {
 	}
 
 	return nil
+}
+
+func (s *basicService) GetDeploy(ctx context.Context, name string) (*Deploy, error) {
+	deploy, err := s.repository.GetDeployByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return deploy, nil
 }

@@ -8,8 +8,9 @@ import (
 )
 
 type ManagerEndpoint struct {
-	DeployEndpoint  endpoint.Endpoint
-	DestroyEndpoint endpoint.Endpoint
+	DeployEndpoint    endpoint.Endpoint
+	DestroyEndpoint   endpoint.Endpoint
+	GetDeployEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service, logger log.Logger) ManagerEndpoint {
@@ -27,9 +28,17 @@ func NewEndpoint(s service.Service, logger log.Logger) ManagerEndpoint {
 		destroyEndpoint = UnwrapErrorMiddleware()(destroyEndpoint)
 	}
 
+	var getDeployEndpoint endpoint.Endpoint
+	{
+		getDeployEndpoint = makeGetDeployEndpoint(s)
+		getDeployEndpoint = LoggingMiddleware(log.With(logger, "method", "GetDeploy"))(getDeployEndpoint)
+		getDeployEndpoint = UnwrapErrorMiddleware()(getDeployEndpoint)
+	}
+
 	return ManagerEndpoint{
-		DeployEndpoint:  deployEndpoint,
-		DestroyEndpoint: destroyEndpoint,
+		DeployEndpoint:    deployEndpoint,
+		DestroyEndpoint:   destroyEndpoint,
+		GetDeployEndpoint: getDeployEndpoint,
 	}
 }
 
@@ -37,6 +46,7 @@ func NewEndpoint(s service.Service, logger log.Logger) ManagerEndpoint {
 var (
 	_ endpoint.Failer = DeployResponse{}
 	_ endpoint.Failer = DestroyResponse{}
+	_ endpoint.Failer = GetDeployResponse{}
 )
 
 type DeployRequest struct {
@@ -46,8 +56,8 @@ type DeployRequest struct {
 }
 
 type DeployResponse struct {
-	Deploy *service.Deploy
-	Err    error `json:"-"`
+	DeployId string
+	Err      error `json:"-"`
 }
 
 func (r DeployResponse) Failed() error {
@@ -57,11 +67,11 @@ func (r DeployResponse) Failed() error {
 func makeDeployEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*DeployRequest)
-		deploy, err := s.Deploy(ctx, req.GitRepo, req.Name, req.Envs)
+		id, err := s.Deploy(ctx, req.GitRepo, req.Name, req.Envs)
 
 		return &DeployResponse{
-			Deploy: deploy,
-			Err:    err,
+			DeployId: id,
+			Err:      err,
 		}, nil
 	}
 }
@@ -85,6 +95,31 @@ func makeDestroyEndpoint(s service.Service) endpoint.Endpoint {
 
 		return &DestroyResponse{
 			Err: err,
+		}, nil
+	}
+}
+
+type GetDeployRequest struct {
+	Name string
+}
+
+type GetDeployResponse struct {
+	Deploy *service.Deploy
+	Err    error `json:"-"`
+}
+
+func (r GetDeployResponse) Failed() error {
+	return r.Err
+}
+
+func makeGetDeployEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(*GetDeployRequest)
+		deploy, err := s.GetDeploy(ctx, req.Name)
+
+		return &GetDeployResponse{
+			Deploy: deploy,
+			Err:    err,
 		}, nil
 	}
 }

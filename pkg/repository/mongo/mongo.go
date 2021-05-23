@@ -58,6 +58,22 @@ func (m *mongoRepository) GetDeploy(ctx context.Context, id string) (*service.De
 	return dataToBusiness(deploy), nil
 }
 
+func (m *mongoRepository) GetDeployByName(ctx context.Context, name string) (*service.Deploy, error) {
+	res := m.collection.FindOne(ctx, bson.M{
+		"name": name,
+	})
+	if err := res.Err(); err != nil {
+		return nil, err
+	}
+
+	deploy := &Deploy{}
+	if err := res.Decode(deploy); err != nil {
+		return nil, err
+	}
+
+	return dataToBusiness(deploy), nil
+}
+
 func (m *mongoRepository) ListDeploy(ctx context.Context) ([]*service.Deploy, error) {
 	var deploys []*service.Deploy
 

@@ -11,8 +11,9 @@ import (
 
 type grpcServer struct {
 	pb.UnimplementedManagerServer
-	deploy  grpctransport.Handler
-	destroy grpctransport.Handler
+	deploy    grpctransport.Handler
+	destroy   grpctransport.Handler
+	getDeploy grpctransport.Handler
 }
 
 func NewGRPCServer(endpoints endpoint.ManagerEndpoint, logger log.Logger) pb.ManagerServer {
@@ -31,6 +32,12 @@ func NewGRPCServer(endpoints endpoint.ManagerEndpoint, logger log.Logger) pb.Man
 			endpoints.DestroyEndpoint,
 			decodeDestroyRequest,
 			encodeDestroyResponse,
+			options...,
+		),
+		getDeploy: grpctransport.NewServer(
+			endpoints.GetDeployEndpoint,
+			decodeGetDeployRequest,
+			encodeGetDeployResponse,
 			options...,
 		),
 	}
@@ -52,4 +59,13 @@ func (g grpcServer) Destroy(ctx context.Context, request *pb.DestroyRequest) (*p
 	}
 
 	return resp.(*pb.DestroyResponse), nil
+}
+
+func (g grpcServer) GetDeploy(ctx context.Context, request *pb.GetDeployRequest) (*pb.GetDeployResponse, error) {
+	_, resp, err := g.getDeploy.ServeGRPC(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.(*pb.GetDeployResponse), nil
 }

@@ -48,6 +48,19 @@ func (r repositoryLogger) GetDeploy(ctx context.Context, id string) (deploy *ser
 	return r.next.GetDeploy(ctx, id)
 }
 
+func (r repositoryLogger) GetDeployByName(ctx context.Context, name string) (deploy *service.Deploy, err error) {
+	defer func() {
+		r.logger.Log(
+			"method", "GetDeployByName",
+			"name", name,
+			"deploy", deploy,
+			"err", err,
+		)
+	}()
+
+	return r.next.GetDeployByName(ctx, name)
+}
+
 func (r repositoryLogger) ListDeploy(ctx context.Context) (deploys []*service.Deploy, err error) {
 	defer func() {
 		r.logger.Log(
