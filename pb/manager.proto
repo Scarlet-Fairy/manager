@@ -67,7 +67,7 @@ message DestroyRequest {
 message DestroyResponse {}
 
 message GetDeployRequest {
-  string name = 1;
+  string deploy_id = 1;
 }
 
 message GetDeployResponse {

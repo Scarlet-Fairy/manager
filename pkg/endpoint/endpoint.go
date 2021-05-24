@@ -100,7 +100,7 @@ func makeDestroyEndpoint(s service.Service) endpoint.Endpoint {
 }
 
 type GetDeployRequest struct {
-	Name string
+	Id string
 }
 
 type GetDeployResponse struct {
@@ -115,7 +115,7 @@ func (r GetDeployResponse) Failed() error {
 func makeGetDeployEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*GetDeployRequest)
-		deploy, err := s.GetDeploy(ctx, req.Name)
+		deploy, err := s.GetDeploy(ctx, req.Id)
 
 		return &GetDeployResponse{
 			Deploy: deploy,

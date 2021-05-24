@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	Deploy(ctx context.Context, gitRepo string, name string, envs map[string]string) (string, error)
+	HandleEvent(ctx context.Context, event *BuildStep, buildId string, envs map[string]string) (bool, error)
 	Destroy(ctx context.Context, deployId string) error
 	GetDeploy(ctx context.Context, name string) (*Deploy, error)
 }
@@ -61,44 +62,12 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 		}
 
 		for event := range events {
-
-			if !event.Step.IsValid() {
-				_ = s.repository.SetBuildStatus(ctx, id, StatusError)
-
+			done, err := s.HandleEvent(context.Background(), event, id, envs)
+			if err != nil {
 				return
 			}
 
-			if event.Error != "" {
-				if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
-					return
-				}
-
-				if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
-					return
-				}
-
-				break
-			}
-			if err := s.repository.RecordBuildStep(ctx, id, *event); err != nil {
-				return
-			}
-
-			if event.Step == StepPush {
-				if err := s.repository.SetBuildStatus(ctx, id, StatusCompleted); err != nil {
-					return
-				}
-
-				jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, id)
-				if err != nil {
-					_ = s.repository.SetBuildStatus(ctx, id, StatusError)
-
-					return
-				}
-
-				if err := s.repository.InitWorkload(ctx, id, jobName, jobName, envs); err != nil {
-					return
-				}
-
+			if done {
 				break
 			}
 		}
@@ -106,6 +75,53 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 	}()
 
 	return id, nil
+}
+
+func (s *basicService) HandleEvent(ctx context.Context, event *BuildStep, buildId string, envs map[string]string) (bool, error) {
+	if !event.Step.IsValid() {
+		if err := s.repository.SetBuildStatus(ctx, buildId, StatusError); err != nil {
+			return false, errors.Wrap(err, "Settings Build status on Error")
+		}
+
+		return false, errors.Wrap(
+			errors.New("Internal error while parsing"),
+			"Build failed",
+		)
+	}
+
+	if event.Error != "" {
+		if err := s.repository.RecordBuildStep(ctx, buildId, *event); err != nil {
+			return false, errors.Wrap(err, "Recording Build Step with error")
+		}
+
+		if err := s.repository.SetBuildStatus(ctx, buildId, StatusError); err != nil {
+			return false, errors.Wrap(err, "Settings Build Status on Error")
+		}
+
+		return true, nil
+	}
+	if err := s.repository.RecordBuildStep(ctx, buildId, *event); err != nil {
+		return false, errors.Wrap(err, "Recoding Build Step")
+	}
+
+	if event.Step == StepPush {
+		if err := s.repository.SetBuildStatus(ctx, buildId, StatusCompleted); err != nil {
+			return false, errors.Wrap(err, "Settings Build Status on Completed")
+		}
+
+		jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, buildId)
+		if err != nil {
+			return false, errors.Wrap(err, "Scheduling Workload")
+		}
+
+		if err := s.repository.InitWorkload(ctx, buildId, jobName, jobName, envs); err != nil {
+			return false, errors.Wrap(err, "Storing workload infos")
+		}
+
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (s *basicService) Destroy(ctx context.Context, deployId string) error {
@@ -125,8 +141,8 @@ func (s *basicService) Destroy(ctx context.Context, deployId string) error {
 	return nil
 }
 
-func (s *basicService) GetDeploy(ctx context.Context, name string) (*Deploy, error) {
-	deploy, err := s.repository.GetDeployByName(ctx, name)
+func (s *basicService) GetDeploy(ctx context.Context, id string) (*Deploy, error) {
+	deploy, err := s.repository.GetDeploy(ctx, id)
 	if err != nil {
 		return nil, err
 	}

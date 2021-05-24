@@ -36,6 +36,21 @@ func (l *loggingMiddlware) Deploy(ctx context.Context, gitRepo string, name stri
 	return l.next.Deploy(ctx, gitRepo, name, envs)
 }
 
+func (l *loggingMiddlware) HandleEvent(ctx context.Context, event *BuildStep, buildId string, envs map[string]string) (isDone bool, err error) {
+	defer func() {
+		l.logger.Log(
+			"method", "HandleEvent",
+			"event", event,
+			"buildId", buildId,
+			"envs", envs,
+			"isDone", isDone,
+			"err", err,
+		)
+	}()
+
+	return l.next.HandleEvent(ctx, event, buildId, envs)
+}
+
 func (l *loggingMiddlware) Destroy(ctx context.Context, deployId string) (err error) {
 	defer func() {
 		l.logger.Log(
@@ -48,14 +63,14 @@ func (l *loggingMiddlware) Destroy(ctx context.Context, deployId string) (err er
 	return l.next.Destroy(ctx, deployId)
 }
 
-func (l *loggingMiddlware) GetDeploy(ctx context.Context, name string) (deploy *Deploy, err error) {
+func (l *loggingMiddlware) GetDeploy(ctx context.Context, id string) (deploy *Deploy, err error) {
 	defer func() {
 		l.logger.Log(
 			"method", "GetDeploy",
-			"name", name,
+			"id", id,
 			"err", err,
 		)
 	}()
 
-	return l.next.GetDeploy(ctx, name)
+	return l.next.GetDeploy(ctx, id)
 }

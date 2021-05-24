@@ -40,7 +40,7 @@ func decodeGetDeployRequest(_ context.Context, grpcReq interface{}) (interface{}
 	req := grpcReq.(*pb.GetDeployRequest)
 
 	return &endpoint.GetDeployRequest{
-		Name: req.Name,
+		Id: req.DeployId,
 	}, nil
 }
 
