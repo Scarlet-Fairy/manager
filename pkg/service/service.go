@@ -55,6 +55,10 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 		return "", errors.Wrap(err, "Storing build infos")
 	}
 
+	if err := s.repository.SetBuildStatus(ctx, id, StatusLoading); err != nil {
+		return "", errors.Wrap(err, "Failed to set build status")
+	}
+
 	go func() {
 		events, clear, err := s.message.ConsumeBuildEvents(id)
 		if err != nil {
