@@ -74,3 +74,14 @@ func (l *loggingMiddlware) GetDeploy(ctx context.Context, id string) (deploy *De
 
 	return l.next.GetDeploy(ctx, id)
 }
+
+func (l *loggingMiddlware) ListDeploys(ctx context.Context) (deploys []*Deploy, err error) {
+	defer func() {
+		l.logger.Log(
+			"method", "ListDeploys",
+			"err", err,
+		)
+	}()
+
+	return l.next.ListDeploys(ctx)
+}

@@ -11,6 +11,7 @@ type Service interface {
 	HandleEvent(ctx context.Context, event *BuildStep, buildId string, envs map[string]string) (bool, error)
 	Destroy(ctx context.Context, deployId string) error
 	GetDeploy(ctx context.Context, name string) (*Deploy, error)
+	ListDeploys(ctx context.Context) ([]*Deploy, error)
 }
 
 type basicService struct {
@@ -160,4 +161,13 @@ func (s *basicService) GetDeploy(ctx context.Context, id string) (*Deploy, error
 	}
 
 	return deploy, nil
+}
+
+func (s *basicService) ListDeploys(ctx context.Context) ([]*Deploy, error) {
+	deploys, err := s.repository.ListDeploy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return deploys, nil
 }

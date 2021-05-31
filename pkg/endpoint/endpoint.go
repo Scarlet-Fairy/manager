@@ -8,9 +8,10 @@ import (
 )
 
 type ManagerEndpoint struct {
-	DeployEndpoint    endpoint.Endpoint
-	DestroyEndpoint   endpoint.Endpoint
-	GetDeployEndpoint endpoint.Endpoint
+	DeployEndpoint     endpoint.Endpoint
+	DestroyEndpoint    endpoint.Endpoint
+	GetDeployEndpoint  endpoint.Endpoint
+	ListDeployEndpoint endpoint.Endpoint
 }
 
 func NewEndpoint(s service.Service, logger log.Logger) ManagerEndpoint {
@@ -35,18 +36,27 @@ func NewEndpoint(s service.Service, logger log.Logger) ManagerEndpoint {
 		getDeployEndpoint = UnwrapErrorMiddleware()(getDeployEndpoint)
 	}
 
+	var listDeploysEndpoint endpoint.Endpoint
+	{
+		listDeploysEndpoint = makeListDeploysEndpoint(s)
+		listDeploysEndpoint = LoggingMiddleware(log.With(logger, "method", "ListDeploys"))(listDeploysEndpoint)
+		listDeploysEndpoint = UnwrapErrorMiddleware()(listDeploysEndpoint)
+	}
+
 	return ManagerEndpoint{
-		DeployEndpoint:    deployEndpoint,
-		DestroyEndpoint:   destroyEndpoint,
-		GetDeployEndpoint: getDeployEndpoint,
+		DeployEndpoint:     deployEndpoint,
+		DestroyEndpoint:    destroyEndpoint,
+		GetDeployEndpoint:  getDeployEndpoint,
+		ListDeployEndpoint: listDeploysEndpoint,
 	}
 }
 
-// compile time assertions for our response types implementing endpoint.Failer.
+// compile time assertions for our response types implementing endpoint.Failer
 var (
 	_ endpoint.Failer = DeployResponse{}
 	_ endpoint.Failer = DestroyResponse{}
 	_ endpoint.Failer = GetDeployResponse{}
+	_ endpoint.Failer = ListDeploysResponse{}
 )
 
 type DeployRequest struct {
@@ -120,6 +130,29 @@ func makeGetDeployEndpoint(s service.Service) endpoint.Endpoint {
 		return &GetDeployResponse{
 			Deploy: deploy,
 			Err:    err,
+		}, nil
+	}
+}
+
+type ListDeploysRequest struct {
+}
+
+type ListDeploysResponse struct {
+	Deploys []*service.Deploy
+	Err     error `json:"-"`
+}
+
+func (r ListDeploysResponse) Failed() error {
+	return r.Err
+}
+
+func makeListDeploysEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		deploys, err := s.ListDeploys(ctx)
+
+		return &ListDeploysResponse{
+			Deploys: deploys,
+			Err:     err,
 		}, nil
 	}
 }

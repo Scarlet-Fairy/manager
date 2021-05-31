@@ -6,6 +6,7 @@ service Manager {
   rpc Deploy(DeployRequest) returns (DeployResponse) {}
   rpc Destroy(DestroyRequest) returns (DestroyResponse) {}
   rpc GetDeploy(GetDeployRequest) returns (GetDeployResponse) {}
+  rpc ListDeploys(ListDeploysRequest) returns (ListDeploysResponse) {}
 }
 
 message Build {
@@ -73,4 +74,10 @@ message GetDeployRequest {
 
 message GetDeployResponse {
   Deploy deploy = 1;
+}
+
+message ListDeploysRequest {}
+
+message ListDeploysResponse {
+  repeated Deploy deploys = 1;
 }

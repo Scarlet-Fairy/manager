@@ -8,6 +8,9 @@ import (
 
 func decodeDeployRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.DeployRequest)
+	if req.Envs == nil {
+		req.Envs = map[string]string{}
+	}
 
 	return &endpoint.DeployRequest{
 		GitRepo: req.GitRepo,
@@ -49,5 +52,22 @@ func encodeGetDeployResponse(_ context.Context, resp interface{}) (interface{}, 
 
 	return &pb.GetDeployResponse{
 		Deploy: coreDeployToTransportDeploy(res.Deploy),
+	}, nil
+}
+
+func decodeListDeploysRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	return &endpoint.ListDeploysRequest{}, nil
+}
+
+func encodeListDeploysResponse(_ context.Context, resp interface{}) (interface{}, error) {
+	res := resp.(*endpoint.ListDeploysResponse)
+
+	var deploys []*pb.Deploy
+	for _, deploy := range res.Deploys {
+		deploys = append(deploys, coreDeployToTransportDeploy(deploy))
+	}
+
+	return &pb.ListDeploysResponse{
+		Deploys: deploys,
 	}, nil
 }

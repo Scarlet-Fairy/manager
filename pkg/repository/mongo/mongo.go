@@ -83,7 +83,7 @@ func (m *mongoRepository) ListDeploy(ctx context.Context) ([]*service.Deploy, er
 	}
 
 	for cur.Next(ctx) {
-		var dataDeploy *Deploy
+		dataDeploy := &Deploy{}
 
 		if err := cur.Decode(dataDeploy); err != nil {
 			return nil, err
