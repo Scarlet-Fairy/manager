@@ -41,6 +41,7 @@ func businessToData(deploy *service.Deploy) *Deploy {
 			JobId:   deploy.Workload.JobId,
 			JobName: deploy.Workload.JobName,
 			Envs:    envs,
+			Url:     deploy.Workload.Url,
 		},
 	}
 }
@@ -76,6 +77,7 @@ func dataToBusiness(deploy *Deploy) *service.Deploy {
 			JobId:   deploy.Workload.JobId,
 			JobName: deploy.Workload.JobName,
 			Envs:    envs,
+			Url:     deploy.Workload.Url,
 		},
 	}
 }

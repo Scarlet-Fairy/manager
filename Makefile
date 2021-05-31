@@ -7,7 +7,7 @@ DOCKER_REGISTRY?=scarletfairy/#if set it should finished by /
 EXPORT_RESULT?=false # for CI please set EXPORT_RESULT to true
 BIN_FOLDER?=bin/
 MAIN_PATH?=cmd/manager/main.go
-
+RABBITMQ_URL=amqp://guest:guest@192.168.44.25:5672/
 
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
@@ -90,7 +90,7 @@ docker-release:
 	docker push $(DOCKER_REGISTRY)$(BINARY_NAME):$(VERSION)
 
 run:
-	@$(GOCMD) run $(MAIN_PATH)
+	@$(GOCMD) run $(MAIN_PATH) --amqp-url $(RABBITMQ_URL)
 
 docker-run: docker-build
 	docker run --network host $(BINARY_NAME)

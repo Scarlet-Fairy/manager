@@ -112,7 +112,7 @@ func (r repositoryLogger) InitBuild(ctx context.Context, id string, jobName, job
 	return r.next.InitBuild(ctx, id, jobName, jobId, imageName)
 }
 
-func (r repositoryLogger) InitWorkload(ctx context.Context, id string, jobName, jobId string, envs map[string]string) (err error) {
+func (r repositoryLogger) InitWorkload(ctx context.Context, id string, jobName, jobId string, envs map[string]string, url string) (err error) {
 	defer func() {
 		r.logger.Log(
 			"method", "InitWorkload",
@@ -120,11 +120,12 @@ func (r repositoryLogger) InitWorkload(ctx context.Context, id string, jobName, 
 			"jobName", jobName,
 			"jobId", jobId,
 			"envs", envs,
+			"url", url,
 			"err", err,
 		)
 	}()
 
-	return r.next.InitWorkload(ctx, id, jobName, jobId, envs)
+	return r.next.InitWorkload(ctx, id, jobName, jobId, envs, url)
 }
 
 func (r repositoryLogger) SetBuildStatus(ctx context.Context, id string, status service.Status) (err error) {

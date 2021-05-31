@@ -11,6 +11,7 @@ type Workload struct {
 	JobId   string `bson:"job_id"`
 	JobName string `bson:"job_name"`
 	Envs    []*Env `bson:"envs"`
+	Url     string `bson:"url"`
 }
 
 type BuildStep struct {

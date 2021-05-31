@@ -37,13 +37,14 @@ func (s schedulerLogger) ScheduleImageBuild(ctx context.Context, workloadId stri
 	return s.next.ScheduleImageBuild(ctx, workloadId, gitRepoUrl)
 }
 
-func (s schedulerLogger) ScheduleWorkload(ctx context.Context, envs map[string]string, workloadId string) (jobName string, err error) {
+func (s schedulerLogger) ScheduleWorkload(ctx context.Context, envs map[string]string, workloadId string) (jobName string, url string, err error) {
 	defer func() {
 		s.logger.Log(
 			"method", "ScheduleWorkload",
 			"envs", envs,
 			"workloadId", workloadId,
 			"jobName", jobName,
+			"url", url,
 			"err", err,
 		)
 	}()

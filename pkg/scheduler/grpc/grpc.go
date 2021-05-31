@@ -37,16 +37,16 @@ func (g grpcScheduler) ScheduleImageBuild(ctx context.Context, workloadId string
 	return res.JobName, res.ImageName, nil
 }
 
-func (g grpcScheduler) ScheduleWorkload(ctx context.Context, envs map[string]string, workloadId string) (string, error) {
+func (g grpcScheduler) ScheduleWorkload(ctx context.Context, envs map[string]string, workloadId string) (string, string, error) {
 	res, err := g.client.ScheduleWorkload(ctx, &pb.ScheduleWorkloadRequest{
 		Envs:       envs,
 		WorkloadId: workloadId,
 	})
 	if err != nil {
-		return "", g.handleGrpcError(err)
+		return "", "", g.handleGrpcError(err)
 	}
 
-	return res.JobName, nil
+	return res.JobName, res.Url, nil
 }
 
 func (g grpcScheduler) UnScheduleJob(ctx context.Context, jobId string) error {

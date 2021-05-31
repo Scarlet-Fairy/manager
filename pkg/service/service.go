@@ -59,12 +59,16 @@ func (s *basicService) Deploy(ctx context.Context, gitRepoUrl string, name strin
 		return "", errors.Wrap(err, "Failed to set build status")
 	}
 
-	go func() {
-		events, clear, err := s.message.ConsumeBuildEvents(id)
-		if err != nil {
-			return
+	events, clear, err := s.message.ConsumeBuildEvents(id)
+	if err != nil {
+		if err := s.repository.SetBuildStatus(ctx, id, StatusError); err != nil {
+			return "", errors.Wrap(err, "Failed to set build status")
 		}
 
+		return "", errors.Wrap(err, "Failed to consume events")
+	}
+
+	go func() {
 		for event := range events {
 			done, err := s.HandleEvent(context.Background(), event, id, envs)
 			if err != nil {
@@ -113,12 +117,16 @@ func (s *basicService) HandleEvent(ctx context.Context, event *BuildStep, buildI
 			return false, errors.Wrap(err, "Settings Build Status on Completed")
 		}
 
-		jobName, err := s.scheduler.ScheduleWorkload(ctx, envs, buildId)
+		jobName, url, err := s.scheduler.ScheduleWorkload(ctx, envs, buildId)
 		if err != nil {
+			if err := s.repository.SetBuildStatus(ctx, buildId, StatusError); err != nil {
+				return false, errors.Wrap(err, "Settings Build Status on Error")
+			}
+
 			return false, errors.Wrap(err, "Scheduling Workload")
 		}
 
-		if err := s.repository.InitWorkload(ctx, buildId, jobName, jobName, envs); err != nil {
+		if err := s.repository.InitWorkload(ctx, buildId, jobName, jobName, envs, url); err != nil {
 			return false, errors.Wrap(err, "Storing workload infos")
 		}
 

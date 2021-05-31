@@ -174,7 +174,7 @@ func (m *mongoRepository) InitBuild(ctx context.Context, id string, jobName stri
 	return nil
 }
 
-func (m *mongoRepository) InitWorkload(ctx context.Context, id string, jobName string, jobId string, envs map[string]string) error {
+func (m *mongoRepository) InitWorkload(ctx context.Context, id string, jobName string, jobId string, envs map[string]string, url string) error {
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -192,6 +192,7 @@ func (m *mongoRepository) InitWorkload(ctx context.Context, id string, jobName s
 				"workload.job_id":   jobId,
 				"workload.job_name": jobName,
 				"workload.envs":     dataEnv,
+				"workload.url":      url,
 			},
 		},
 	)

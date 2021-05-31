@@ -27,6 +27,7 @@ message ScheduleWorkloadRequest {
 
 message ScheduleWorkloadResponse {
   string job_name = 1;
+  string url = 2;
 }
 
 message UnScheduleJobRequest {

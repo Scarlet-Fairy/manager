@@ -11,7 +11,7 @@ type Repository interface {
 	DeleteDeploy(ctx context.Context, id string) error
 
 	InitBuild(ctx context.Context, id string, jobName, jobId, imageName string) error
-	InitWorkload(ctx context.Context, id string, jobName, jobId string, envs map[string]string) error
+	InitWorkload(ctx context.Context, id string, jobName, jobId string, envs map[string]string, url string) error
 	SetBuildStatus(ctx context.Context, id string, status Status) error
 	RecordBuildStep(ctx context.Context, id string, buildStep BuildStep) error
 }

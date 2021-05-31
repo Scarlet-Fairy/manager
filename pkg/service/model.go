@@ -58,6 +58,7 @@ type Workload struct {
 	JobId   string
 	JobName string
 	Envs    map[string]string
+	Url     string
 }
 
 type Deploy struct {

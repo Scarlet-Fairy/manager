@@ -29,6 +29,7 @@ func transportDeployToCoreDeploy(deploy *pb.Deploy) *service.Deploy {
 			JobId:   deploy.Workload.JobId,
 			JobName: deploy.Workload.JobName,
 			Envs:    deploy.Workload.Envs,
+			Url:     deploy.Workload.Url,
 		},
 	}
 }
@@ -56,6 +57,7 @@ func coreDeployToTransportDeploy(deploy *service.Deploy) *pb.Deploy {
 			JobId:   deploy.Workload.JobId,
 			JobName: deploy.Workload.JobName,
 			Envs:    deploy.Workload.Envs,
+			Url:     deploy.Workload.Url,
 		},
 	}
 }
